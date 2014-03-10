@@ -220,33 +220,6 @@ def main(args):
         os.rename(source, destination)
 
 
-
-    # for src_file in files:
-
-    #     print "Processing %s" % src_file
-
-    #     if not os.path.exists(src_file):
-    #         print "\tFailed to find file"
-    #         continue
-
-    #     name, ext = os.path.splitext(src_file)
-
-    #     if ext.lower() not in ['.jpg', '.jpeg']:
-    #         print "Not a jpg file"
-    #         timestamp = get_creation_time(src_file)
-    #         path = date_time_to_path(datetime.datetime.fromtimestamp(timestamp))
-    #         basename = os.path.basename(src_file)
-    #         destination = os.path.join(destination_root, path, basename)
-    #     else:
-    #         src_file, destination = process_jpg(destination_root, duplicate_dir, dir_contents, src_file)
-
-    #     print "\tRenaming %s -> %s" % (src_file, destination)
-    #     dest_dir = os.path.dirname(destination)
-    #     if not os.path.exists(dest_dir):
-    #         os.makedirs(dest_dir)
-    #     os.rename(src_file, destination)
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--dry-run", action="store_true", default=False)
