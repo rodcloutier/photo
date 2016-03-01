@@ -140,8 +140,9 @@ def process_jpg(destination_root, duplicate_dir, dir_contents, src_file):
 
     # if file exists in destination
     destination_files = dir_contents.get(path, [])
+    destination = os.path.join(destination_root, path, basename)
     if basename in destination_files:
-        print "File already exists %s" % destination
+        print "File already exists"
         if same_file(tags, destination):
             print "\tMoving original to duplicate dir"
             destination = os.path.join(duplicate_dir, basename)
@@ -150,8 +151,7 @@ def process_jpg(destination_root, duplicate_dir, dir_contents, src_file):
             destination = name + "_1" + ext
             print "\tNot same file, renamed to %s" % destination
     else:
-        destination = os.path.join(destination_root, path, basename)
-        print "File does not exits in destination"
+        print "File does not exits in destination %s" % destination
         # File ends with basename, rename it
         match_file = trailing_name_matches(destination_files, basename)
         if match_file:
@@ -182,6 +182,8 @@ def is_jpg(src_file):
 def main(args):
 
     destination_root = os.path.expanduser(args.destination) #'~/Dropbox/Photos/')
+    if not destination_root.endswith('/'):
+        destination_root = destination_root + '/'
     if not os.path.exists(destination_root):
         print "Destination does not exits"
         return
@@ -189,7 +191,7 @@ def main(args):
     duplicate_dir = os.path.expanduser(args.duplicate_dir)
     if not os.path.exists(duplicate_dir):
         os.makedirs(duplicate_dir)
-
+    print "Copying duplicates to %s" % duplicate_dir
 
     # List the content of the destination
     dir_contents = {}
@@ -202,8 +204,18 @@ def main(args):
 
     missing_files, files = partition(files, os.path.exists)
 
-    for f in missing_files:
-        print "Failed to find file %s" % f
+    mssing_files, missing_files_test = tee(missing_files)
+    files, files_test = tee(files)
+    try:
+        files_test.next()
+    except StopIteration:
+        print "No files found"
+        return
+
+    try:
+        missing_files_test.next()
+    except StopIteration:
+        print "All files already in destination"
 
     _process_other = partial(process_other_files_types, destination_root)
     _process_jpg = partial(process_jpg, destination_root, duplicate_dir, dir_contents)
@@ -234,15 +246,10 @@ if __name__ == "__main__":
     args = parse_args()
 
     if args.dry_run:
+        print "Dry run"
         os.rename = lambda s,d: None
         os.makedirs = lambda x: None
     try:
         main(args)
     except Exception as e:
         print repr(e)
-
-
-
-
-
-
