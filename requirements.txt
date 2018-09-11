@@ -1,0 +1,6 @@
+ExifRead==2.1.2
+pip==18.0
+python-dateutil==2.7.3
+setuptools==40.2.0
+six==1.11.0
+wheel==0.31.1

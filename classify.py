@@ -1,9 +1,9 @@
-#! /Users/rod/dev/env/exif/bin/python
+#! /Users/rod/.virtualenvs/exif/bin/python
 
 import argparse
 import datetime
 from functools import partial
-from itertools import tee, chain, imap
+from itertools import tee, chain
 import os
 import pprint
 import re
@@ -41,7 +41,7 @@ stat64.argtypes = [c_char_p, POINTER(struct_stat64)]
 
 def get_creation_time(path):
     buf = struct_stat64()
-    rv = stat64(path, pointer(buf))
+    rv = stat64(path.encode('utf-8'), pointer(buf))
     if rv != 0:
         raise OSError("Couldn't stat file %r" % path)
     return buf.st_birthtimespec.tv_sec
@@ -103,7 +103,7 @@ def trailing_name_matches(destination_files, basename):
 def same_file(tags, path):
 
     try:
-        for k, tag in extract_tags(path).iteritems():
+        for k, tag in extract_tags(path).items():
             if str(tags[k].values) != str(tag.values):
                 # print "Found difference in %s '%s' vs '%s'" % (k, tags[k], tag)
                 return False
@@ -113,13 +113,13 @@ def same_file(tags, path):
 
 
 def rename_duplicate(duplicate_dir, basename, src_file, match_file):
-    print "\tFound matching file %s" % match_file
-    print "\tMoving original to duplicate dir"
+    print(f"\tFound matching file {match_file}")
+    print("\tMoving original to duplicate dir")
     os.rename(src_file, os.path.join(duplicate_dir, basename))
 
 
 def process_other_files_types(destination_root, src_file):
-    print "Processing file %s" % src_file
+    print(f"Processing file {src_file}")
     timestamp = get_creation_time(src_file)
     path = date_time_to_path(datetime.datetime.fromtimestamp(timestamp))
     basename = os.path.basename(src_file)
@@ -142,26 +142,26 @@ def process_jpg(destination_root, duplicate_dir, dir_contents, src_file):
     destination_files = dir_contents.get(path, [])
     destination = os.path.join(destination_root, path, basename)
     if basename in destination_files:
-        print "File already exists"
+        print("File already exists")
         if same_file(tags, destination):
-            print "\tMoving original to duplicate dir"
+            print("\tMoving original to duplicate dir")
             destination = os.path.join(duplicate_dir, basename)
         else:
             name, ext = os.path.splitext(destination)
             destination = name + "_1" + ext
-            print "\tNot same file, renamed to %s" % destination
+            print(f"\tNot same file, renamed to {destination}")
     else:
-        print "File does not exits in destination %s" % destination
+        print(f"File does not exits in destination {destination}")
         # File ends with basename, rename it
         match_file = trailing_name_matches(destination_files, basename)
         if match_file:
-            print "Trailing name matches"
+            print("Trailing name matches")
             match_file = os.path.join(destination_root, path, match_file)
             if same_file(tags, match_file):
                 rename_duplicate(duplicate_dir, basename, src_file, match_file)
                 src_file = match_file
         else:
-            print "File not not found in destination, checking same file under another name"
+            print("File not not found in destination, checking same file under another name")
             for f in destination_files:
                 f = os.path.join(destination_root, path, f)
                 if os.path.exists(f) and same_file(tags, f):
@@ -178,20 +178,19 @@ def is_jpg(src_file):
     return ext.lower() in ['.jpg', '.jpeg']
 
 
-
 def main(args):
 
-    destination_root = os.path.expanduser(args.destination) #'~/Dropbox/Photos/')
+    destination_root = os.path.expanduser(args.destination)  # '~/Dropbox/Photos/')
     if not destination_root.endswith('/'):
         destination_root = destination_root + '/'
     if not os.path.exists(destination_root):
-        print "Destination does not exits"
+        print("Destination does not exits")
         return
 
     duplicate_dir = os.path.expanduser(args.duplicate_dir)
     if not os.path.exists(duplicate_dir):
         os.makedirs(duplicate_dir)
-    print "Copying duplicates to %s" % duplicate_dir
+    print(f"Copying duplicates to {duplicate_dir}")
 
     # List the content of the destination
     dir_contents = {}
@@ -207,25 +206,25 @@ def main(args):
     mssing_files, missing_files_test = tee(missing_files)
     files, files_test = tee(files)
     try:
-        files_test.next()
+        next(files_test)
     except StopIteration:
-        print "No files found"
+        print("No files found")
         return
 
     try:
-        missing_files_test.next()
+        next(missing_files_test)
     except StopIteration:
-        print "All files already in destination"
+        print("All files already in destination")
 
     _process_other = partial(process_other_files_types, destination_root)
     _process_jpg = partial(process_jpg, destination_root, duplicate_dir, dir_contents)
 
     other_files, jpg_file = partition(files, is_jpg)
 
-    src_dst = chain(imap(_process_other, other_files), imap(_process_jpg, jpg_file))
+    src_dst = chain(map(_process_other, other_files), map(_process_jpg, jpg_file))
 
     for source, destination in src_dst:
-        print "\tRenaming %s -> %s" % (source, destination)
+        print(f"\tRenaming {source} -> {destination}")
         dest_dir = os.path.dirname(destination)
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
@@ -246,10 +245,10 @@ if __name__ == "__main__":
     args = parse_args()
 
     if args.dry_run:
-        print "Dry run"
+        print("Dry run")
         os.rename = lambda s,d: None
         os.makedirs = lambda x: None
-    try:
-        main(args)
-    except Exception as e:
-        print repr(e)
+    #try:
+    main(args)
+    # except Exception as e:
+    #     print(repr(e))
